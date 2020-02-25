@@ -3,168 +3,125 @@
 
 #include <QStringListModel>
 #include <QKeyEvent>
+#include <unordered_map>
 
-CCalculator::CCalculator(QWidget *parent)
-    : QDialog(parent)
+class CStringListModel : public QStringListModel
 {
-	ui = new Ui::CCalculator();
-	ui->setupUi(this);
+public:
+    CStringListModel( QObject* parent ) :
+        QStringListModel( parent )
+    {
+    }
 
-    fModel = new QStringListModel( this );
-    ui->values->setModel( fModel );
+    QVariant data( const QModelIndex& index, int role = Qt::DisplayRole ) const override
+    {
+        if ( role == Qt::TextAlignmentRole )
+            return static_cast<int>( Qt::AlignVCenter | Qt::AlignRight );
+        return QStringListModel::data( index, role );
+    }
+};
 
-    connect( ui->btn_0, SIGNAL( clicked() ), this, SLOT( btn0Clicked() ) );
-    connect( ui->btn_1, SIGNAL( clicked() ), this, SLOT( btn1Clicked() ) );
-    connect( ui->btn_2, SIGNAL( clicked() ), this, SLOT( btn2Clicked() ) );
-    connect( ui->btn_3, SIGNAL( clicked() ), this, SLOT( btn3Clicked() ) );
-    connect( ui->btn_4, SIGNAL( clicked() ), this, SLOT( btn4Clicked() ) );
-    connect( ui->btn_5, SIGNAL( clicked() ), this, SLOT( btn5Clicked() ) );
-    connect( ui->btn_6, SIGNAL( clicked() ), this, SLOT( btn6Clicked() ) );
-    connect( ui->btn_7, SIGNAL( clicked() ), this, SLOT( btn7Clicked() ) );
-    connect( ui->btn_8, SIGNAL( clicked() ), this, SLOT( btn8Clicked() ) );
-    connect( ui->btn_9, SIGNAL( clicked() ), this, SLOT( btn9Clicked() ) );
-    connect( ui->btn_enter, SIGNAL( clicked() ), this, SLOT( btnEnterClicked() ) );
-    connect( ui->btn_period, SIGNAL( clicked() ), this, SLOT( btnPeriodClicked() ) );
-    connect( ui->btn_plus, SIGNAL( clicked() ), this, SLOT( btnPlusClicked() ) );
+CCalculator::CCalculator( QWidget* parent )
+    : QDialog( parent ),
+    fImpl( new Ui::CCalculator )
+{
+    fImpl->setupUi( this );
+    setWindowFlags( windowFlags() & ~Qt::WindowContextHelpButtonHint );
 
-    connect( ui->btnMinus, SIGNAL( clicked() ), this, SLOT( btnMinusClicked() ) );
+    fModel = new CStringListModel( this );
+    fImpl->values->setModel( fModel );
 
-    connect( ui->btn_CA, SIGNAL( clicked() ), this, SLOT( btnCAClicked() ) );
-    connect( ui->btn_Average, SIGNAL( clicked() ), this, SLOT( btnAverageClicked() ) );
+    (void)connect( fImpl->btn_0, &QToolButton::clicked, this, [this](){ addValue( '0' ); } );
+    (void)connect( fImpl->btn_1, &QToolButton::clicked, this, [this](){ addValue( '1' ); } );
+    (void)connect( fImpl->btn_2, &QToolButton::clicked, this, [this](){ addValue( '2' ); } );
+    (void)connect( fImpl->btn_3, &QToolButton::clicked, this, [this](){ addValue( '3' ); } );
+    (void)connect( fImpl->btn_4, &QToolButton::clicked, this, [this](){ addValue( '4' ); } );
+    (void)connect( fImpl->btn_5, &QToolButton::clicked, this, [this](){ addValue( '5' ); } );
+    (void)connect( fImpl->btn_6, &QToolButton::clicked, this, [this](){ addValue( '6' ); } );
+    (void)connect( fImpl->btn_7, &QToolButton::clicked, this, [this](){ addValue( '7' ); } );
+    (void)connect( fImpl->btn_8, &QToolButton::clicked, this, [this](){ addValue( '8' ); } );
+    (void)connect( fImpl->btn_9, &QToolButton::clicked, this, [this](){ addValue( '9' ); } );
+    (void)connect( fImpl->btn_period, &QToolButton::clicked, this, [ this ]() { addValue( '.' ); } );
 
-    ui->values->installEventFilter( this );
+    (void)connect( fImpl->btn_enter, &QToolButton::clicked, this, &CCalculator::btnEnterClicked );
+    (void)connect( fImpl->btn_C, &QToolButton::clicked, this, &CCalculator::btnCClicked );
+    (void)connect( fImpl->btn_Del, &QToolButton::clicked, this, &CCalculator::btnDelClicked );
+    (void)connect( fImpl->btn_BS, &QToolButton::clicked, this, &CCalculator::btnBSClicked );
+
+    (void)connect( fImpl->btn_plus, &QToolButton::clicked, this, [this](){ binaryOperatorClicked( '+' ); } );
+    (void)connect( fImpl->btn_minus, &QToolButton::clicked, this, [ this ]() { binaryOperatorClicked( '-' ); } );
+    (void)connect( fImpl->btn_mult, &QToolButton::clicked, this, [ this ]() { binaryOperatorClicked( '*' ); } );
+    (void)connect( fImpl->btn_div, &QToolButton::clicked, this, [ this ]() { binaryOperatorClicked( '/' ); } );
+
+    (void)connect( fImpl->btn_Average, &QToolButton::clicked, this, &CCalculator::btnAverageClicked );
+
+    fImpl->values->installEventFilter( this );
     setFocus( Qt::MouseFocusReason );
 }
 
-bool CCalculator::eventFilter(QObject *obj, QEvent *event)
+bool CCalculator::eventFilter( QObject* obj, QEvent* event )
 {
-    if (obj == ui->values) 
+    if ( ( obj == fImpl->values ) || ( obj == this ) )
     {
-        if (event->type() == QEvent::KeyPress) 
+        if ( event->type() == QEvent::KeyPress )
         {
-            QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
+            QKeyEvent* keyEvent = static_cast<QKeyEvent*>( event );
             keyPressEvent( keyEvent );
             return true;
-        } 
-        else 
+        }
+        else
         {
             return false;
         }
-    } else 
+    }
+    else
     {
         // pass the event on to the parent class
-        return QDialog::eventFilter(obj, event);
+        return QDialog::eventFilter( obj, event );
     }
 }
 
-void CCalculator::keyPressEvent( QKeyEvent * event )
+void CCalculator::keyPressEvent( QKeyEvent* event )
 {
-     switch (event->key()) 
-     {
-     case Qt::Key_0:
-         btn0Clicked();
-         break;
-     case Qt::Key_1:
-         btn1Clicked();
-         break;
-     case Qt::Key_2:
-         btn2Clicked();
-         break;
-     case Qt::Key_3:
-         btn3Clicked();
-         break;
-     case Qt::Key_4:
-         btn4Clicked();
-         break;
-     case Qt::Key_5:
-         btn5Clicked();
-         break;
-     case Qt::Key_6:
-         btn6Clicked();
-         break;
-     case Qt::Key_7:
-         btn7Clicked();
-         break;
-     case Qt::Key_8:
-         btn8Clicked();
-         break;
-     case Qt::Key_9:
-         btn9Clicked();
-         break;
-     case Qt::Key_Enter:
-     case Qt::Key_Return:
-         btnEnterClicked();
-         break;
+    using TKeyPressedFunction = std::function< void(void) >;
+    static std::unordered_map< int, TKeyPressedFunction > sKeyMap = 
+    {
+         { Qt::Key_0, [ this ]() { fImpl->btn_0->animateClick(); } }
+        ,{ Qt::Key_1, [ this ]() { fImpl->btn_1->animateClick(); } }
+        ,{ Qt::Key_2, [ this ]() { fImpl->btn_2->animateClick(); } }
+        ,{ Qt::Key_3, [ this ]() { fImpl->btn_3->animateClick(); } }
+        ,{ Qt::Key_4, [ this ]() { fImpl->btn_4->animateClick(); } }
+        ,{ Qt::Key_5, [ this ]() { fImpl->btn_5->animateClick(); } }
+        ,{ Qt::Key_6, [ this ]() { fImpl->btn_6->animateClick(); } }
+        ,{ Qt::Key_7, [ this ]() { fImpl->btn_7->animateClick(); } }
+        ,{ Qt::Key_8, [ this ]() { fImpl->btn_8->animateClick(); } }
+        ,{ Qt::Key_9, [ this ]() { fImpl->btn_9->animateClick(); } }
+        ,{ Qt::Key_Enter, [ this ]() { fImpl->btn_enter->animateClick(); } }
+        ,{ Qt::Key_Return, [ this ]() { fImpl->btn_enter->animateClick(); } }
+        ,{ Qt::Key_Plus, [ this ]() { fImpl->btn_plus->animateClick(); } }
+        ,{ Qt::Key_Minus, [ this ]() { fImpl->btn_minus->animateClick(); } }
+        ,{ Qt::Key_Asterisk, [ this ]() { fImpl->btn_mult->animateClick(); } }
+        ,{ Qt::Key_Slash, [ this ]() { fImpl->btn_div->animateClick(); } }
+        ,{ Qt::Key_Backspace, [ this ]() { fImpl->btn_BS->animateClick(); } }
+        ,{ Qt::Key_Delete, [ this ]() { fImpl->btn_Del->animateClick(); } }
+    };
 
-     case Qt::Key_Backspace:
-         btnBSClicked();  
-         break;
-     case Qt::Key_Delete:
-         btnDeleteClicked();  
-         break;
-     default:
-         QDialog::keyPressEvent(event);
-     }
+    auto pos = sKeyMap.find( event->key() );
+    if ( pos != sKeyMap.end() )
+    {
+        ((*pos).second)();
+        return;
+    }
+    QDialog::keyPressEvent( event );
 }
 
 CCalculator::~CCalculator()
 {
-	delete ui;
 }
 
-void CCalculator::btn0Clicked()
+int CCalculator::numValues() const
 {
-    addValue( '0' );
-}
-
-void CCalculator::btn1Clicked()
-{
-    addValue( '1' );
-}
-
-void CCalculator::btn2Clicked()
-{
-    addValue( '2' );
-}
-
-void CCalculator::btn3Clicked()
-{
-    addValue( '3' );
-}
-
-void CCalculator::btn4Clicked()
-{
-    addValue( '4' );
-}
-
-void CCalculator::btn5Clicked()
-{
-    addValue( '5' );
-}
-
-void CCalculator::btn6Clicked()
-{
-    addValue( '6' );
-}
-
-void CCalculator::btn7Clicked()
-{
-    addValue( '7' );
-}
-
-void CCalculator::btn8Clicked()
-{
-    addValue( '8' );
-}
-
-void CCalculator::btn9Clicked()
-{
-    addValue( '9' );
-}
-
-void CCalculator::btnPeriodClicked()
-{
-    addValue( '.' );
+    return fModel->rowCount();
 }
 
 double CCalculator::getLastValue( bool popLast )
@@ -177,7 +134,7 @@ double CCalculator::getLastValue( bool popLast )
     {
         if ( !popLast )
             return 0.0;
-        fModel->removeRows( fModel->rowCount()-1, 1 );
+        fModel->removeRows( fModel->rowCount() - 1, 1 );
         mi = fModel->index( fModel->rowCount() - 1 );
     }
 
@@ -186,49 +143,15 @@ double CCalculator::getLastValue( bool popLast )
     if ( !aOK )
     {
         if ( popLast )
-            fModel->removeRows( fModel->rowCount()-1, 1 );
+            fModel->removeRows( fModel->rowCount() - 1, 1 );
         return 0.0;
     }
 
     if ( popLast )
-        fModel->removeRows( fModel->rowCount()-1, 1 );
+        fModel->removeRows( fModel->rowCount() - 1, 1 );
     return currValue;
 }
 
-void CCalculator::btnEnterClicked()
-{
-    if ( fModel->rowCount() == 0 )
-        return;
-
-    QModelIndex mi = fModel->index( fModel->rowCount() - 1 );
-    QString currValue = fModel->data( mi, Qt::EditRole ).toString();
-    if ( currValue.isEmpty() )
-        return;
-
-    fModel->insertRows( fModel->rowCount(), 1 );
-}
-
-void CCalculator::btnDeleteClicked()
-{
-    if ( numValues() == 0 )
-        return;
-
-    QModelIndex mi = fModel->index( fModel->rowCount() - 1 );
-    fModel->setData( mi, "" ); 
-}
-
-void CCalculator::btnBSClicked()
-{
-    if ( numValues() == 0 )
-        return;
-
-    QModelIndex mi = fModel->index( fModel->rowCount() - 1 );
-    QString currValue = fModel->data( mi, Qt::EditRole ).toString();
-    if ( currValue.isEmpty() )
-        return;
-    currValue = currValue.left( currValue.length() - 1 );
-    fModel->setData( mi , currValue );
-}
 
 void CCalculator::addValue( char value )
 {
@@ -245,7 +168,7 @@ void CCalculator::addValue( char value )
         mi = fModel->index( 0, 0 );
     }
     currValue += value;
-    fModel->setData( mi, currValue ); 
+    fModel->setData( mi, currValue );
 }
 
 void CCalculator::addLastValue( double value )
@@ -256,50 +179,82 @@ void CCalculator::addLastValue( double value )
     fModel->setData( mi, newValue );
 }
 
-int CCalculator::numValues() const
+void CCalculator::btnEnterClicked()
 {
-    return fModel->rowCount();
-}
-
-void CCalculator::btnPlusClicked()
-{
-    if ( fModel->rowCount() < 2 )
+    if ( fModel->rowCount() == 0 )
         return;
 
-    double val1 = getLastValue( true );
-    double val2 = getLastValue( true );
-    double newValue = val1 + val2;
-    addLastValue( newValue );
-}
-
-void CCalculator::btnMinusClicked ()
-{
-    if ( numValues() < 2 )
+    QModelIndex mi = fModel->index( fModel->rowCount() - 1 );
+    QString currValue = fModel->data( mi, Qt::EditRole ).toString();
+    if ( currValue.isEmpty() )
         return;
-    double val2 = getLastValue( true ) ;
-    double val1 = getLastValue ( true ) ;
-    double newValue = val1 - val2 ;
-    addLastValue (newValue) ;
+
+    fModel->insertRows( fModel->rowCount(), 1 );
 }
 
-void CCalculator::btnCAClicked()
+void CCalculator::btnDelClicked()
+{
+    if ( numValues() == 0 )
+        return;
+
+    fModel->removeRows( fModel->rowCount() - 1, 1 );
+}
+
+void CCalculator::btnBSClicked()
+{
+    if ( numValues() == 0 )
+        return;
+
+    QModelIndex mi = fModel->index( fModel->rowCount() - 1 );
+    QString currValue = fModel->data( mi, Qt::EditRole ).toString();
+    if ( currValue.isEmpty() )
+        return;
+    currValue = currValue.left( currValue.length() - 1 );
+    fModel->setData( mi, currValue );
+}
+
+void CCalculator::btnCClicked() // clear all
 {
     fModel->setStringList( QStringList() );
 }
 
-void CCalculator::btnAverageClicked()
+void CCalculator::binaryOperatorClicked( char op )
 {
-    if ( numValues () < 1 )
+    using TBinaryOpFunc = std::function< double( double, double ) >;
+    static std::unordered_map< char, TBinaryOpFunc > sOpMap =
+    {
+          { '+', [ this ]( double lhs, double rhs ) { return lhs + rhs; } }
+         ,{ '-', [ this ]( double lhs, double rhs ) { return lhs - rhs; } }
+         ,{ '*', [ this ]( double lhs, double rhs ) { return lhs * rhs; } }
+         ,{ '/', [ this ]( double lhs, double rhs ) { return lhs / rhs; } }
+    };
+
+    if ( fModel->rowCount() < 2 )
         return;
 
-    int num= 0;
+    auto val2 = getLastValue( true );
+    auto val1 = getLastValue( true );
+
+    auto pos = sOpMap.find( op );
+    if ( pos == sOpMap.end() )
+        return;
+    auto newValue = (*pos).second( val1, val2 );
+    addLastValue( newValue );
+}
+
+void CCalculator::btnAverageClicked()
+{
+    if ( numValues() < 1 )
+        return;
+
+    int num = 0;
     double total = 0;
-    while ( numValues() > 0)
+    while ( numValues() > 0 )
     {
         num = num + 1;
-        double curr = getLastValue ( true);
+        double curr = getLastValue( true );
         total += curr;
     }
     double newValue = total / num;
-    addLastValue ( newValue);
+    addLastValue( newValue );
 }

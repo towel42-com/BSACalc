@@ -2,6 +2,8 @@
 #define _CALCULATOR_H
 
 #include <QDialog>
+#include <memory>
+#include <functional>
 namespace Ui {class CCalculator;};
 
 class QStringListModel;
@@ -19,31 +21,22 @@ public:
     bool eventFilter(QObject *obj, QEvent *event);
     
 public slots:
-    void btn0Clicked();
-    void btn1Clicked();
-    void btn2Clicked();
-    void btn3Clicked();
-    void btn4Clicked();
-    void btn5Clicked();
-    void btn6Clicked();
-    void btn7Clicked();
-    void btn8Clicked();
-    void btn9Clicked();
-    void btnPeriodClicked();
-    void btnEnterClicked();
-    void btnDeleteClicked();
-    void btnBSClicked();  
+    void binaryOperatorClicked( char op );
 
-    void btnPlusClicked();
-    void btnMinusClicked();
-    void btnCAClicked();
+    void btnEnterClicked();
+
+    void btnCClicked();
+    void btnDelClicked();
+    void btnBSClicked();
+
     void btnAverageClicked();
 private:
+    void binaryOperator( const std::function< double( double, double ) >& func );
     double getLastValue( bool popLast );
     void addValue( char value );
     void addLastValue( double value );
 
-    Ui::CCalculator *ui;
+    std::unique_ptr< Ui::CCalculator > fImpl;
     QStringListModel * fModel;
 };
 
