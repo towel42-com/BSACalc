@@ -1,9 +1,13 @@
 #include "Calculator.h"
+#include "utils.h"
+
 #include "ui_Calculator.h"
 
 #include <QStringListModel>
 #include <QKeyEvent>
+#include <QMessageBox>
 #include <unordered_map>
+
 
 class CStringListModel : public QStringListModel
 {
@@ -54,6 +58,16 @@ CCalculator::CCalculator( QWidget* parent )
     (void)connect( fImpl->btn_div, &QToolButton::clicked, this, [ this ]() { binaryOperatorClicked( '/' ); } );
 
     (void)connect( fImpl->btn_Average, &QToolButton::clicked, this, &CCalculator::btnAverageClicked );
+    (void)connect( fImpl->btn_Narcissistic, &QToolButton::clicked, this, &CCalculator::btnNarcissisticClicked );
+    (void)connect( fImpl->btn_Factors, &QToolButton::clicked, this, [this](){ btnFactorsClicked( true ); } );
+    (void)connect( fImpl->btn_ProperFactors, &QToolButton::clicked, this, [ this ]() { btnFactorsClicked( false ); } );
+    (void)connect( fImpl->btn_PrimeFactors, &QToolButton::clicked, this, [ this ]() { btnPrimeFactorsClicked(); } );
+    (void)connect( fImpl->btn_Perfect, &QToolButton::clicked, this, [ this ]() { btnPerfectClicked(); } );
+    (void)connect( fImpl->btn_SemiPerfect, &QToolButton::clicked, this, [ this ]() { btnSemiPerfectClicked(); } );
+    
+    (void)connect( fImpl->btn_Weird, &QToolButton::clicked, this, [ this ]() { btnWeirdClicked(); } );
+    (void)connect( fImpl->btn_Sublime, &QToolButton::clicked, this, [ this ]() { btnSublimeClicked(); } );
+    (void)connect( fImpl->btn_Abundant, &QToolButton::clicked, this, [ this ]() { btnAbundantClicked(); } );
 
     fImpl->values->installEventFilter( this );
     setFocus( Qt::MouseFocusReason );
@@ -124,13 +138,29 @@ int CCalculator::numValues() const
     return fModel->rowCount();
 }
 
-double CCalculator::getLastValue( bool popLast )
+template< typename T1 >
+auto toNum( const QVariant& string, bool* aOK )
+-> typename std::enable_if< std::is_floating_point< T1 >::value, T1 >::type
+{
+    return string.toDouble( aOK );
+}
+
+template< typename T1 >
+auto toNum( const QVariant& string, bool * aOK )
+-> typename std::enable_if< std::is_integral< T1 >::value, T1 >::type
+{
+    return string.toLongLong( aOK );
+}
+
+template< typename T >
+T CCalculator::getLastValue( bool popLast )
 {
     if ( fModel->rowCount() == 0 )
         return 0.0;
 
     QModelIndex mi = fModel->index( fModel->rowCount() - 1 );
-    if ( mi.data().toString().isEmpty() )
+    auto lastValue = mi.data();
+    if ( lastValue.toString().isEmpty() )
     {
         if ( !popLast )
             return 0.0;
@@ -139,16 +169,28 @@ double CCalculator::getLastValue( bool popLast )
     }
 
     bool aOK = false;
-    double currValue = mi.data().toDouble( &aOK );
-    if ( !aOK )
+    T currValue;
+    if ( lastValue.toString().toLower() == "nan" )
     {
-        if ( popLast )
-            fModel->removeRows( fModel->rowCount() - 1, 1 );
-        return 0.0;
+        currValue = std::numeric_limits< T >::quiet_NaN();
+        aOK = true;
     }
+    else if ( lastValue.toString().toLower() == "inf" )
+    {
+        currValue = std::numeric_limits< T >::infinity();
+        aOK = true;
+    }
+    else
+        currValue = toNum< T >( lastValue, &aOK );
 
     if ( popLast )
         fModel->removeRows( fModel->rowCount() - 1, 1 );
+
+    if ( !aOK )
+    {
+        return 0.0;
+    }
+
     return currValue;
 }
 
@@ -173,10 +215,35 @@ void CCalculator::addValue( char value )
 
 void CCalculator::addLastValue( double value )
 {
-    QString newValue = QString::number( value );
+    addLastValue( QString::number( value ) );
+}
+
+void CCalculator::addLastValue( int64_t value )
+{
+    addLastValue( QString::number( value ) );
+}
+
+void CCalculator::addLastValue( bool value )
+{
+    addLastValue( value ? tr( "Yes" ) : tr( "No" ) );
+}
+
+void CCalculator::addLastValue( const QString& newValue )
+{
     fModel->insertRows( fModel->rowCount(), 1 );
     QModelIndex mi = fModel->index( fModel->rowCount() - 1 );
     fModel->setData( mi, newValue );
+}
+
+std::pair< int64_t, std::list< int64_t > > CCalculator::getSumOfFactors( int64_t curr, bool properFactors ) const
+{
+    auto factors = computeFactors( curr );
+    if ( properFactors && !factors.empty() )
+        factors.pop_back();
+    int64_t sum = 0;
+    for ( auto ii : factors )
+        sum += ii;
+    return std::make_pair( sum, factors );
 }
 
 void CCalculator::btnEnterClicked()
@@ -232,8 +299,8 @@ void CCalculator::binaryOperatorClicked( char op )
     if ( fModel->rowCount() < 2 )
         return;
 
-    auto val2 = getLastValue( true );
-    auto val1 = getLastValue( true );
+    auto val2 = getLastValue< double >( true );
+    auto val1 = getLastValue< double >( true );
 
     auto pos = sOpMap.find( op );
     if ( pos == sOpMap.end() )
@@ -252,9 +319,206 @@ void CCalculator::btnAverageClicked()
     while ( numValues() > 0 )
     {
         num = num + 1;
-        double curr = getLastValue( true );
+        auto curr = getLastValue< double >( true );
         total += curr;
     }
     double newValue = total / num;
     addLastValue( newValue );
+}
+
+void CCalculator::btnNarcissisticClicked()
+{
+    if ( numValues() < 1 )
+        return;
+
+    auto curr = getLastValue< int64_t >( false );
+
+    bool aOK;
+    bool isNarc = NUtils::isNarcissistic( curr, 10, aOK );
+    if ( aOK )
+    {
+        addLastValue( isNarc );
+    }
+}
+
+std::list< int64_t > CCalculator::computeFactors( int64_t num ) const
+{
+    std::list< int64_t > retVal;
+    std::list< int64_t > retVal2;
+    retVal.push_back( 1 );
+    retVal2.push_back( num );
+
+    // only need to go to half way point
+    auto lastNum = ( num / 2 ) + ( ( ( num % 2 ) == 0 ) ? 0 : 1 );
+    for( int64_t ii = 2; ii < lastNum; ++ii )
+    {
+        if ( ( num % ii ) == 0 )
+        {
+            retVal.push_back( ii );
+            auto other = num / ii;
+            lastNum = std::min( lastNum, other );
+            retVal2.push_front( other );
+        }
+    }
+
+    if ( *retVal.rbegin() == *retVal2.begin() )
+        retVal2.pop_front();
+    retVal.insert( retVal.end(), retVal2.begin(), retVal2.end() );
+    return retVal;
+}
+
+
+std::list< int64_t > CCalculator::computePrimeFactors( int64_t num ) const
+{
+    std::list< int64_t > retVal;
+
+    while( ( num % 2 ) == 0 )
+    {
+        retVal.push_back( 2 );
+        num = num / 2 ;
+    }
+
+    int64_t lastNum = std::sqrt( num );
+
+    for( int64_t ii = 3; ii < lastNum; ii = ii + 2 )
+    {
+        while( ( num % ii )  == 0 )
+        {
+            retVal.push_back( ii );
+            num = num / ii;
+        }
+    }
+    if ( num > 2 )
+        retVal.push_back( num );
+    return retVal;
+}
+
+void CCalculator::btnFactorsClicked( bool incNum )
+{
+    if ( numValues() < 1 )
+        return;
+    auto curr = getLastValue< int64_t >( false );
+    auto factors = computeFactors( curr );
+
+    reportPrime( factors, curr, incNum );
+}
+
+void CCalculator::btnPrimeFactorsClicked()
+{
+    if ( numValues() < 1 )
+        return;
+    auto curr = getLastValue< int64_t >( false );
+    auto factors = computePrimeFactors( curr );
+
+    reportPrime( factors, curr, true );
+}
+
+void CCalculator::btnPerfectClicked()
+{
+    if ( numValues() < 1 )
+        return;
+    auto curr = getLastValue< int64_t >( false );
+
+    addLastValue( isPerfect( curr ).first );
+}
+
+void CCalculator::btnSemiPerfectClicked()
+{
+    if ( numValues() < 1 )
+        return;
+    auto curr = getLastValue< int64_t >( false );
+    addLastValue( isSemiPerfect( curr ).first );
+}
+
+bool CCalculator::isSemiPerfect( std::vector< int64_t > & factors, int64_t num ) const
+{
+    std::sort( factors.begin(), factors.end() );
+
+    std::vector< std::vector< bool > > subset;
+    subset.resize( factors.size() + 1 );
+    for( auto && ii : subset )
+    {
+        ii.resize( num + 1, false );
+        ii[ 0 ] = true;
+    }
+    for( size_t ii = 1; ii < subset.size(); ++ii )
+    {
+        for( size_t jj = 1; jj < subset[ ii ].size(); ++jj )
+        {
+            if ( jj < static_cast< uint64_t >( factors[ ii - 1 ] ) )
+                subset[ ii ][ jj ] = subset[ ii - 1 ][ jj ];
+            else
+                subset[ ii ][ jj ] = subset[ ii - 1 ][ jj ] || subset[ ii - 1 ][ jj - factors[ ii - 1 ] ];
+        }
+    }
+    return subset[ factors.size() ][ num ];
+}
+
+std::pair< bool, std::list< int64_t > > CCalculator::isPerfect( int64_t num ) const
+{
+    auto sum = getSumOfFactors( num, true );
+    return std::make_pair( sum.first == num, sum.second );
+}
+
+std::pair< bool, std::list< int64_t > > CCalculator::isSemiPerfect( int64_t num ) const
+{
+    auto sum = getSumOfFactors( num, true );
+    std::vector< int64_t > factors( { sum.second.begin(), sum.second.end() } );
+    auto isSemiPerfect = this->isSemiPerfect( factors, num );
+    return std::make_pair( isSemiPerfect, sum.second );
+}
+
+std::pair< bool, std::list< int64_t > > CCalculator::isAbundant( int64_t num ) const
+{
+    auto sum = getSumOfFactors( num, true );
+    return std::make_pair( sum.first > num, sum.second );
+}
+
+void CCalculator::btnAbundantClicked()
+{
+    if ( numValues() < 1 )
+        return;
+    auto curr = getLastValue< int64_t >( false );
+    addLastValue( isAbundant( curr ).first );
+}
+
+void CCalculator::btnWeirdClicked()
+{
+    if ( numValues() < 1 )
+        return;
+    auto curr = getLastValue< int64_t >( false );
+    auto isAbundant = this->isAbundant( curr );
+    if ( !isAbundant.first )
+    {
+        addLastValue( false );
+        return;
+    }
+
+    std::vector< int64_t > factors( { isAbundant.second.begin(), isAbundant.second.end() } );
+    addLastValue( !isSemiPerfect( factors, curr ) );
+}
+
+void CCalculator::btnSublimeClicked()
+{
+    if ( numValues() < 1 )
+        return;
+    auto curr = getLastValue< int64_t >( false );
+    auto sumOfFactors = getSumOfFactors( curr, false );
+
+    auto isNumFactorsPerfect = isPerfect( sumOfFactors.second.size() ).first;
+    auto isSumPerfect = isPerfect( sumOfFactors.first ).first;
+    addLastValue( isNumFactorsPerfect && isSumPerfect );
+}
+
+void CCalculator::reportPrime( std::list<int64_t>& factors, int64_t curr, bool incNum )
+{
+    if ( factors.size() == 2 )
+    {
+        addLastValue( tr( "%1 is a prime number" ).arg( curr ) );
+        return;
+    }
+    if ( !incNum )
+        factors.pop_back();
+    for ( auto&& ii : factors )
+        addLastValue( ii );
 }
