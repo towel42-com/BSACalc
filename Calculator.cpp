@@ -309,6 +309,19 @@ void CCalculator::binaryOperatorClicked( char op )
     addLastValue( newValue );
 }
 
+void CCalculator::reportPrime( std::list<int64_t>& factors, int64_t curr, bool incNum )
+{
+    if ( factors.size() == 2 )
+    {
+        addLastValue( tr( "%1 is a prime number" ).arg( curr ) );
+        return;
+    }
+    if ( !incNum )
+        factors.pop_back();
+    for ( auto&& ii : factors )
+        addLastValue( ii );
+}
+
 void CCalculator::btnAverageClicked()
 {
     if ( numValues() < 1 )
@@ -393,43 +406,6 @@ std::list< int64_t > CCalculator::computePrimeFactors( int64_t num ) const
     return retVal;
 }
 
-void CCalculator::btnFactorsClicked( bool incNum )
-{
-    if ( numValues() < 1 )
-        return;
-    auto curr = getLastValue< int64_t >( false );
-    auto factors = computeFactors( curr );
-
-    reportPrime( factors, curr, incNum );
-}
-
-void CCalculator::btnPrimeFactorsClicked()
-{
-    if ( numValues() < 1 )
-        return;
-    auto curr = getLastValue< int64_t >( false );
-    auto factors = computePrimeFactors( curr );
-
-    reportPrime( factors, curr, true );
-}
-
-void CCalculator::btnPerfectClicked()
-{
-    if ( numValues() < 1 )
-        return;
-    auto curr = getLastValue< int64_t >( false );
-
-    addLastValue( isPerfect( curr ).first );
-}
-
-void CCalculator::btnSemiPerfectClicked()
-{
-    if ( numValues() < 1 )
-        return;
-    auto curr = getLastValue< int64_t >( false );
-    addLastValue( isSemiPerfect( curr ).first );
-}
-
 bool CCalculator::isSemiPerfect( std::vector< int64_t > & factors, int64_t num ) const
 {
     std::sort( factors.begin(), factors.end() );
@@ -474,6 +450,44 @@ std::pair< bool, std::list< int64_t > > CCalculator::isAbundant( int64_t num ) c
     return std::make_pair( sum.first > num, sum.second );
 }
 
+
+void CCalculator::btnFactorsClicked( bool incNum )
+{
+    if ( numValues() < 1 )
+        return;
+    auto curr = getLastValue< int64_t >( false );
+    auto factors = computeFactors( curr );
+
+    reportPrime( factors, curr, incNum );
+}
+
+void CCalculator::btnPrimeFactorsClicked()
+{
+    if ( numValues() < 1 )
+        return;
+    auto curr = getLastValue< int64_t >( false );
+    auto factors = computePrimeFactors( curr );
+
+    reportPrime( factors, curr, true );
+}
+
+void CCalculator::btnPerfectClicked()
+{
+    if ( numValues() < 1 )
+        return;
+    auto curr = getLastValue< int64_t >( false );
+
+    addLastValue( isPerfect( curr ).first );
+}
+
+void CCalculator::btnSemiPerfectClicked()
+{
+    if ( numValues() < 1 )
+        return;
+    auto curr = getLastValue< int64_t >( false );
+    addLastValue( isSemiPerfect( curr ).first );
+}
+
 void CCalculator::btnAbundantClicked()
 {
     if ( numValues() < 1 )
@@ -508,17 +522,4 @@ void CCalculator::btnSublimeClicked()
     auto isNumFactorsPerfect = isPerfect( sumOfFactors.second.size() ).first;
     auto isSumPerfect = isPerfect( sumOfFactors.first ).first;
     addLastValue( isNumFactorsPerfect && isSumPerfect );
-}
-
-void CCalculator::reportPrime( std::list<int64_t>& factors, int64_t curr, bool incNum )
-{
-    if ( factors.size() == 2 )
-    {
-        addLastValue( tr( "%1 is a prime number" ).arg( curr ) );
-        return;
-    }
-    if ( !incNum )
-        factors.pop_back();
-    for ( auto&& ii : factors )
-        addLastValue( ii );
 }
