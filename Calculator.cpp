@@ -377,6 +377,7 @@ std::list< int64_t > CCalculator::computeFactors( int64_t num ) const
     if ( *retVal.rbegin() == *retVal2.begin() )
         retVal2.pop_front();
     retVal.insert( retVal.end(), retVal2.begin(), retVal2.end() );
+    retVal.sort();
     return retVal;
 }
 
@@ -406,28 +407,17 @@ std::list< int64_t > CCalculator::computePrimeFactors( int64_t num ) const
     return retVal;
 }
 
-bool CCalculator::isSemiPerfect( std::vector< int64_t > & factors, int64_t num ) const
+bool CCalculator::isSemiPerfect( const std::vector< int64_t >& factors, size_t n, int64_t num ) const
 {
-    std::sort( factors.begin(), factors.end() );
+    if ( num == 0 )
+        return true;
+    if ( n == 0 && num != 0 )
+        return false;
 
-    std::vector< std::vector< bool > > subset;
-    subset.resize( factors.size() + 1 );
-    for( auto && ii : subset )
-    {
-        ii.resize( num + 1, false );
-        ii[ 0 ] = true;
-    }
-    for( size_t ii = 1; ii < subset.size(); ++ii )
-    {
-        for( size_t jj = 1; jj < subset[ ii ].size(); ++jj )
-        {
-            if ( jj < static_cast< uint64_t >( factors[ ii - 1 ] ) )
-                subset[ ii ][ jj ] = subset[ ii - 1 ][ jj ];
-            else
-                subset[ ii ][ jj ] = subset[ ii - 1 ][ jj ] || subset[ ii - 1 ][ jj - factors[ ii - 1 ] ];
-        }
-    }
-    return subset[ factors.size() ][ num ];
+    if ( factors[ n - 1 ] > num )
+        return isSemiPerfect( factors, n - 1, num );
+    return isSemiPerfect( factors, n - 1, num ) 
+        || isSemiPerfect( factors, n - 1, num - factors[ n - 1 ] );
 }
 
 std::pair< bool, std::list< int64_t > > CCalculator::isPerfect( int64_t num ) const
@@ -439,8 +429,8 @@ std::pair< bool, std::list< int64_t > > CCalculator::isPerfect( int64_t num ) co
 std::pair< bool, std::list< int64_t > > CCalculator::isSemiPerfect( int64_t num ) const
 {
     auto sum = getSumOfFactors( num, true );
-    std::vector< int64_t > factors( { sum.second.begin(), sum.second.end() } );
-    auto isSemiPerfect = this->isSemiPerfect( factors, num );
+    auto factors = std::vector< int64_t >( { sum.second.begin(), sum.second.end() } );
+    auto isSemiPerfect = this->isSemiPerfect( factors, factors.size(), num );
     return std::make_pair( isSemiPerfect, sum.second );
 }
 
@@ -509,7 +499,7 @@ void CCalculator::btnWeirdClicked()
     }
 
     std::vector< int64_t > factors( { isAbundant.second.begin(), isAbundant.second.end() } );
-    addLastValue( !isSemiPerfect( factors, curr ) );
+    addLastValue( !isSemiPerfect( factors, factors.size(), curr ) );
 }
 
 void CCalculator::btnSublimeClicked()

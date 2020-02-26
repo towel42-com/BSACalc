@@ -59,7 +59,7 @@ private:
 
     std::list< int64_t > computeFactors( int64_t num ) const;
     std::list< int64_t > computePrimeFactors( int64_t num ) const;
-    bool isSemiPerfect( std::vector< int64_t >& numbers, int64_t num ) const;
+    bool isSemiPerfect( const std::vector< int64_t >& numbers, size_t n, int64_t num ) const;
 
     std::unique_ptr< Ui::CCalculator > fImpl;
     QStringListModel * fModel;
