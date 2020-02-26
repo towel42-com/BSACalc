@@ -6,6 +6,9 @@ set(qtproject_SRCS
 
 set(qtproject_H
     Calculator.h
+)
+
+set(project_H
     utils.h
 )
 
