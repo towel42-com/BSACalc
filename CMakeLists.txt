@@ -4,6 +4,7 @@ if(CMAKE_VERSION VERSION_LESS "3.7.0")
 endif()
 
 project(BSACalc) 
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY 0)
 
 SET(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/Install)
@@ -12,13 +13,8 @@ SET(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/Install)
 #ENDIF()
 
 INSTALL( CODE "
-    #IF( NOT \"\${CPACK_PACKAGE_FILE_NAME}\" STREQUAL \"\" )
-        MESSAGE( STATUS \"Making a \${CMAKE_INSTALL_CONFIG_NAME} install area\" )
-        #IF(\"\${CMAKE_INSTALL_CONFIG_NAME}\" MATCHES \"^([Dd][Ee][Bb][Uu][Gg])$\")
-        #    SET(CMAKE_INSTALL_PREFIX \${CMAKE_INSTALL_PREFIX}.debug)
-        #ENDIF()
-        MESSAGE( STATUS \"Installing to \${CMAKE_INSTALL_PREFIX}\" )
-     #ENDIF()
+		MESSAGE( STATUS \"Making a \${CMAKE_INSTALL_CONFIG_NAME} install area\" )
+		MESSAGE( STATUS \"Installing to \${CMAKE_INSTALL_PREFIX}\" )
     ")
 
 SET(CMAKE_AUTOMOC OFF)
@@ -27,11 +23,8 @@ SET(CMAKE_AUTOUIC OFF)
 
 find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
 SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/Modules ${CMAKE_MODULE_PATH})
-#find_package(BSAQt5 REQUIRED)
-#BSA_Install_Qt()
-find_package(WinDeployQt REQUIRED)
 
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+find_package(WinDeployQt REQUIRED)
 
 include( include.cmake )
 QT5_WRAP_UI(qtproject_UIS_H ${qtproject_UIS})
@@ -45,7 +38,10 @@ source_group("Generated Files" FILES ${qtproject_UIS_H} ${qtproject_MOC_SRCS} ${
 source_group("Resource Files" FILES ${qtproject_QRC} ${qtproject_QRC_SOURCES} )
 source_group("Designer Files" FILES ${qtproject_UIS} )
 source_group("Header Files" FILES ${qtproject_H} ${project_H} )
-source_group("CMake Files" FILES CMakeLists.txt include.cmake )
+SET( _CMAKE_FILES "CMakeLists.txt;include.cmake" )
+source_group("CMake Files" FILES ${_CMAKE_FILES} )
+FILE(GLOB _CMAKE_MODULE_FILES "${CMAKE_SOURCE_DIR}/Modules/*")
+source_group("CMake Files\\Modues" FILES ${_CMAKE_MODULE_FILES} )
 
 add_executable(BSACalc WIN32 ${project_SRCS} ${project_H}  
 	${qtproject_SRCS} 
@@ -56,21 +52,19 @@ add_executable(BSACalc WIN32 ${project_SRCS} ${project_H}
 	${qtproject_H} 
 	${qtproject_UIS}
 	${qtproject_QRC_SOURCES}
-	include.cmake
-	CMakeLists.txt
+	${_CMAKE_FILES}
+	${_CMAKE_MODULE_FILES}
 )
 target_link_libraries( BSACalc 
 	Qt5::Widgets
     Qt5::Core
 )
 SET(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION .)
+
 WinDeployQt( BSACalc . )
 
 INSTALL(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION . )
 INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/Debug/${PROJECT_NAME}.pdb DESTINATION . CONFIGURATIONS Debug )
-# INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo/${PROJECT_NAME}.pdb DESTINATION . CONFIGURATIONS RelWithDebInfo )
-# INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/Release/${PROJECT_NAME}.pdb DESTINATION . CONFIGURATIONS Release )
-# INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/MinSizeRel/${PROJECT_NAME}.pdb DESTINATION . CONFIGURATIONS MinSizeRel )
 
 SET(CPACK_PACKAGE_VENDOR "BSA Troop 162")
 SET(CPACK_PACKAGE_VERSION_MAJOR "1")
@@ -83,31 +77,3 @@ include(CPack)
 #foreach (_variableName ${_variableNames})
 #    message(STATUS "${_variableName}=${${_variableName}}")
 #endforeach()
-
-string(REPLACE "Source" ${CPACK_SYSTEM_NAME} PACKAGE_BASE_NAME ${CPACK_PACKAGE_FILE_NAME})
-
-set(SRC_ZIP_FILE  ${CMAKE_BINARY_DIR}/${PACKAGE_BASE_NAME}.zip)
-set(SRC_MSI_FILE  ${CMAKE_BINARY_DIR}/${PACKAGE_BASE_NAME}.exe)
-set(DEST_ZIP_FILE ${CMAKE_SOURCE_DIR}/${PACKAGE_BASE_NAME}.zip)
-set(DEST_MSI_FILE ${CMAKE_SOURCE_DIR}/${PACKAGE_BASE_NAME}.exe)
-
-add_custom_command( 
-    COMMENT "Creating Packages to Build area "
-    OUTPUT ${SRC_ZIP_FILE} ${SRC_MSI_FILE}
-    COMMAND ${CMAKE_COMMAND} --build . --target PACKAGE --config $<CONFIG>
-    DEPENDS ${PROJECT_NAME}
-    )
-
-add_custom_command( 
-    COMMENT "Copying Packages to Source area for GIT"
-    OUTPUT ${DEST_ZIP_FILE} ${DEST_MSI_FILE}
-    COMMAND ${CMAKE_COMMAND} -E copy ${SRC_ZIP_FILE} ${DEST_ZIP_FILE}
-    COMMAND ${CMAKE_COMMAND} -E copy ${SRC_MSI_FILE} ${DEST_MSI_FILE}
-    DEPENDS ${SRC_ZIP_FILE} ${SRC_MSI_FILE} 
-    )
-
-    
-add_custom_target(INSTALL_PACKAGES
-        DEPENDS ${DEST_ZIP_FILE} ${DEST_MSI_FILE} 
-        )
-set_target_properties(INSTALL_PACKAGES PROPERTIES FOLDER CMakePredefinedTargets)
