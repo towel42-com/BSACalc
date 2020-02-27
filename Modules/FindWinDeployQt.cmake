@@ -77,11 +77,22 @@ function(WinDeployQt target directory)
         while(_files)
             list(GET _files 0 _src)
             list(GET _files 1 _dest)
-			MESSAGE( STATUS \"Installing '\${_src}' to '\${_dest}'\" )
             execute_process(
                 COMMAND \"${CMAKE_COMMAND}\" -E
-                    copy_if_different \${_src} \"\${CMAKE_INSTALL_PREFIX}/${directory}/\${_dest}\"
+                    compare_files \"\${_src}\" \"\${CMAKE_INSTALL_PREFIX}/${directory}/\${_dest}\"
+                    OUTPUT_VARIABLE _outvar
+                    ERROR_VARIABLE _errvar
+                    RESULT_VARIABLE _result_code
             )
+            if( \${_result_code} )
+                MESSAGE( STATUS \"Installing: \${CMAKE_INSTALL_PREFIX}/${directory}/\${_dest}\" )
+                execute_process(
+                    COMMAND \"${CMAKE_COMMAND}\" -E
+                        copy \${_src} \"\${CMAKE_INSTALL_PREFIX}/${directory}/\${_dest}\"
+                )
+            ELSE()
+                MESSAGE( STATUS \"Up-to-date: \${CMAKE_INSTALL_PREFIX}/${directory}/\${_dest}\" )
+            ENDIF()
             list(REMOVE_AT _files 0 1)
         endwhile()
         "
