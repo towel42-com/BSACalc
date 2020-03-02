@@ -52,10 +52,15 @@ CCalculator::CCalculator( QWidget* parent )
     fImpl( new Ui::CCalculator )
 {
     fImpl->setupUi( this );
-    setWindowFlags( windowFlags() & ~Qt::WindowContextHelpButtonHint );
+    //setWindowFlags( windowFlags() & ~Qt::WindowContextHelpButtonHint );
 
     fModel = new CStringListModel( this );
     fImpl->values->setModel( fModel );
+    (void)connect( fModel, &QAbstractItemModel::dataChanged, this, [ this ]() { slotDataChanged(); } );
+    (void)connect( fModel, &QAbstractItemModel::modelReset, this, [ this ]() { slotDataChanged(); } );
+    (void)connect( fModel, &QAbstractItemModel::rowsInserted, this, [ this ]() { slotDataChanged(); } );
+    (void)connect( fModel, &QAbstractItemModel::rowsRemoved, this, [ this ]() { slotDataChanged(); } );
+    (void)connect( fModel, &QAbstractItemModel::rowsMoved, this, [ this ]() { slotDataChanged(); } );
 
     (void)connect( fImpl->btn_0, &QToolButton::clicked, this, [this](){ addValue( '0' ); } );
     (void)connect( fImpl->btn_1, &QToolButton::clicked, this, [this](){ addValue( '1' ); } );
@@ -87,12 +92,14 @@ CCalculator::CCalculator( QWidget* parent )
     (void)connect( fImpl->btn_Perfect, &QToolButton::clicked, this, [ this ]() { btnPerfectClicked(); } );
     (void)connect( fImpl->btn_SemiPerfect, &QToolButton::clicked, this, [ this ]() { btnSemiPerfectClicked(); } );
     
+    (void)connect( fImpl->btn_Abundant, &QToolButton::clicked, this, [ this ]() { btnAbundantClicked(); } );
     (void)connect( fImpl->btn_Weird, &QToolButton::clicked, this, [ this ]() { btnWeirdClicked(); } );
     (void)connect( fImpl->btn_Sublime, &QToolButton::clicked, this, [ this ]() { btnSublimeClicked(); } );
-    (void)connect( fImpl->btn_Abundant, &QToolButton::clicked, this, [ this ]() { btnAbundantClicked(); } );
+
 
     fImpl->values->installEventFilter( this );
     setFocus( Qt::MouseFocusReason );
+    slotDataChanged();
 }
 
 bool CCalculator::eventFilter( QObject* obj, QEvent* event )
@@ -114,6 +121,48 @@ bool CCalculator::eventFilter( QObject* obj, QEvent* event )
     {
         // pass the event on to the parent class
         return QDialog::eventFilter( obj, event );
+    }
+}
+
+void CCalculator::slotDataChanged()
+{
+    static std::unordered_map< QAbstractButton *, int32_t > sNumRowsPerFunctionMap =
+    {
+         { fImpl->btn_0, 0 }
+        ,{ fImpl->btn_1, 0 }
+        ,{ fImpl->btn_2, 0 }
+        ,{ fImpl->btn_3, 0 }
+        ,{ fImpl->btn_4, 0 }
+        ,{ fImpl->btn_5, 0 }
+        ,{ fImpl->btn_6, 0 }
+        ,{ fImpl->btn_7, 0 }
+        ,{ fImpl->btn_8, 0 }
+        ,{ fImpl->btn_9, 0 }
+        ,{ fImpl->btn_enter, 1 }
+        ,{ fImpl->btn_plus, 2 }
+        ,{ fImpl->btn_minus, 2 }
+        ,{ fImpl->btn_mult, 2 }
+        ,{ fImpl->btn_div, 2 }
+        ,{ fImpl->btn_C, 1 }
+        ,{ fImpl->btn_BS, 1 }
+        ,{ fImpl->btn_Del, 1 }
+        ,{ fImpl->btn_period, 0 }
+        ,{ fImpl->btn_Average, 1 }
+        ,{ fImpl->btn_Narcissistic, 1 }
+        ,{ fImpl->btn_Factors, 1 }
+        ,{ fImpl->btn_ProperFactors, 1 }
+        ,{ fImpl->btn_PrimeFactors, 1 }
+        ,{ fImpl->btn_Perfect, 1 }
+        ,{ fImpl->btn_SemiPerfect, 1 }
+        ,{ fImpl->btn_Abundant, 1 }
+        ,{ fImpl->btn_Weird, 1 }
+        ,{ fImpl->btn_Sublime, 1 }
+    };
+
+    auto numRows = fModel->rowCount();
+    for( auto && ii : sNumRowsPerFunctionMap )
+    {
+        ii.first->setEnabled( numRows >= ii.second );
     }
 }
 
@@ -331,9 +380,9 @@ void CCalculator::binaryOperatorClicked( char op )
     addLastValue( newValue );
 }
 
-void CCalculator::reportPrime( std::list<int64_t>& factors, int64_t curr, bool incNum )
+void CCalculator::reportPrime( std::list<int64_t>& factors, int64_t curr, bool incNum, int numShowPrime )
 {
-    if ( factors.size() == 2 )
+    if ( factors.size() == numShowPrime )
     {
         addLastValue( tr( "%1 is a prime number" ).arg( curr ) );
         return;
@@ -470,7 +519,7 @@ void CCalculator::btnFactorsClicked( bool incNum )
     auto curr = getLastValue< int64_t >( false );
     auto factors = computeFactors( curr );
 
-    reportPrime( factors, curr, incNum );
+    reportPrime( factors, curr, incNum, 2 );
 }
 
 void CCalculator::btnPrimeFactorsClicked()
@@ -480,7 +529,7 @@ void CCalculator::btnPrimeFactorsClicked()
     auto curr = getLastValue< int64_t >( false );
     auto factors = computePrimeFactors( curr );
 
-    reportPrime( factors, curr, true );
+    reportPrime( factors, curr, true, 1 );
 }
 
 void CCalculator::btnPerfectClicked()

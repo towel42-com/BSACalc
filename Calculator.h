@@ -57,7 +57,7 @@ public slots:
     void btnNarcissisticClicked();
     void btnFactorsClicked( bool incNum );
 
-    void reportPrime( std::list<int64_t>& factors, int64_t curr, bool incNum );
+    void reportPrime( std::list<int64_t>& factors, int64_t curr, bool incNum, int numShowsPrime );
 
     void btnPrimeFactorsClicked();
     void btnPerfectClicked();
@@ -66,6 +66,7 @@ public slots:
     void btnWeirdClicked();
     void btnSublimeClicked();
     void btnAbundantClicked();
+    void slotDataChanged();
 private:
     template< typename T >
     T getLastValue( bool popLast );
