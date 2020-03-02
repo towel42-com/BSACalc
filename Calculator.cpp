@@ -113,7 +113,7 @@ void CCalculator::initMaps()
          ,{ '/', [ this ]( double lhs, double rhs ) { return lhs / rhs; } }
     };
 
-    std::unordered_map< QAbstractButton*, int32_t > sNumRowsPerFunctionMap =
+    fNumRowsPerFunctionMap =
     {
          { fImpl->btn_0, 0 }
         ,{ fImpl->btn_1, 0 }
@@ -146,7 +146,7 @@ void CCalculator::initMaps()
         ,{ fImpl->btn_Sublime, 1 }
     };
 
-    std::unordered_map< int, TKeyPressedFunction > sKeyMap =
+    fKeyMap =
     {
          { Qt::Key_0, [ this ]() { fImpl->btn_0->animateClick(); } }
         ,{ Qt::Key_1, [ this ]() { fImpl->btn_1->animateClick(); } }
