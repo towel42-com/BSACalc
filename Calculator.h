@@ -31,6 +31,7 @@
 namespace Ui {class CCalculator;};
 
 class QStringListModel;
+class QAbstractButton;
 
 class CCalculator : public QDialog
 {
@@ -86,6 +87,13 @@ private:
 
     std::unique_ptr< Ui::CCalculator > fImpl;
     QStringListModel * fModel;
+
+    void initMaps();
+    using TBinaryOpFunc = std::function< double( double, double ) >;
+    std::unordered_map< char, TBinaryOpFunc > fOpMap;
+    std::unordered_map< QAbstractButton*, int32_t > fNumRowsPerFunctionMap;
+    using TKeyPressedFunction = std::function< void( void ) >;
+    std::unordered_map< int, TKeyPressedFunction > fKeyMap;
 };
 
 #endif // _ALCULATOR_H

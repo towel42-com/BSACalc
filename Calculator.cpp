@@ -99,34 +99,21 @@ CCalculator::CCalculator( QWidget* parent )
 
     fImpl->values->installEventFilter( this );
     setFocus( Qt::MouseFocusReason );
+    initMaps();
     slotDataChanged();
 }
 
-bool CCalculator::eventFilter( QObject* obj, QEvent* event )
+void CCalculator::initMaps()
 {
-    if ( ( obj == fImpl->values ) || ( obj == this ) )
+    fOpMap =
     {
-        if ( event->type() == QEvent::KeyPress )
-        {
-            QKeyEvent* keyEvent = static_cast<QKeyEvent*>( event );
-            keyPressEvent( keyEvent );
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-    else
-    {
-        // pass the event on to the parent class
-        return QDialog::eventFilter( obj, event );
-    }
-}
+          { '+', [ this ]( double lhs, double rhs ) { return lhs + rhs; } }
+         ,{ '-', [ this ]( double lhs, double rhs ) { return lhs - rhs; } }
+         ,{ '*', [ this ]( double lhs, double rhs ) { return lhs * rhs; } }
+         ,{ '/', [ this ]( double lhs, double rhs ) { return lhs / rhs; } }
+    };
 
-void CCalculator::slotDataChanged()
-{
-    static std::unordered_map< QAbstractButton *, int32_t > sNumRowsPerFunctionMap =
+    std::unordered_map< QAbstractButton*, int32_t > sNumRowsPerFunctionMap =
     {
          { fImpl->btn_0, 0 }
         ,{ fImpl->btn_1, 0 }
@@ -159,17 +146,7 @@ void CCalculator::slotDataChanged()
         ,{ fImpl->btn_Sublime, 1 }
     };
 
-    auto numRows = fModel->rowCount();
-    for( auto && ii : sNumRowsPerFunctionMap )
-    {
-        ii.first->setEnabled( numRows >= ii.second );
-    }
-}
-
-void CCalculator::keyPressEvent( QKeyEvent* event )
-{
-    using TKeyPressedFunction = std::function< void(void) >;
-    static std::unordered_map< int, TKeyPressedFunction > sKeyMap = 
+    std::unordered_map< int, TKeyPressedFunction > sKeyMap =
     {
          { Qt::Key_0, [ this ]() { fImpl->btn_0->animateClick(); } }
         ,{ Qt::Key_1, [ this ]() { fImpl->btn_1->animateClick(); } }
@@ -190,9 +167,42 @@ void CCalculator::keyPressEvent( QKeyEvent* event )
         ,{ Qt::Key_Backspace, [ this ]() { fImpl->btn_BS->animateClick(); } }
         ,{ Qt::Key_Delete, [ this ]() { fImpl->btn_Del->animateClick(); } }
     };
+}
+bool CCalculator::eventFilter( QObject* obj, QEvent* event )
+{
+    if ( ( obj == fImpl->values ) || ( obj == this ) )
+    {
+        if ( event->type() == QEvent::KeyPress )
+        {
+            QKeyEvent* keyEvent = static_cast<QKeyEvent*>( event );
+            keyPressEvent( keyEvent );
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else
+    {
+        // pass the event on to the parent class
+        return QDialog::eventFilter( obj, event );
+    }
+}
 
-    auto pos = sKeyMap.find( event->key() );
-    if ( pos != sKeyMap.end() )
+void CCalculator::slotDataChanged()
+{
+    auto numRows = fModel->rowCount();
+    for( auto && ii : fNumRowsPerFunctionMap )
+    {
+        ii.first->setEnabled( numRows >= ii.second );
+    }
+}
+
+void CCalculator::keyPressEvent( QKeyEvent* event )
+{
+    auto pos = fKeyMap.find( event->key() );
+    if ( pos != fKeyMap.end() )
     {
         ((*pos).second)();
         return;
@@ -358,23 +368,14 @@ void CCalculator::btnCClicked() // clear all
 
 void CCalculator::binaryOperatorClicked( char op )
 {
-    using TBinaryOpFunc = std::function< double( double, double ) >;
-    static std::unordered_map< char, TBinaryOpFunc > sOpMap =
-    {
-          { '+', [ this ]( double lhs, double rhs ) { return lhs + rhs; } }
-         ,{ '-', [ this ]( double lhs, double rhs ) { return lhs - rhs; } }
-         ,{ '*', [ this ]( double lhs, double rhs ) { return lhs * rhs; } }
-         ,{ '/', [ this ]( double lhs, double rhs ) { return lhs / rhs; } }
-    };
-
     if ( fModel->rowCount() < 2 )
         return;
 
     auto val2 = getLastValue< double >( true );
     auto val1 = getLastValue< double >( true );
 
-    auto pos = sOpMap.find( op );
-    if ( pos == sOpMap.end() )
+    auto pos = fOpMap.find( op );
+    if ( pos == fOpMap.end() )
         return;
     auto newValue = (*pos).second( val1, val2 );
     addLastValue( newValue );
