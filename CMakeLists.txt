@@ -24,36 +24,39 @@ cmake_minimum_required(VERSION 3.1)
 if(CMAKE_VERSION VERSION_LESS "3.7.0")
     set(CMAKE_INCLUDE_CURRENT_DIR ON)
 endif()
-
 project(BSACalc) 
+
+SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/Modules ${CMAKE_MODULE_PATH})
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED true)
+find_package(Threads)
+find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
+
+find_package(Deploy REQUIRED)
+
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY 0)
 
 SET(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/Install)
 IF ( "${CPACK_RUNNING}" STREQUAL "" )
-	IF(${CMAKE_INSTALL_CONFIG_NAME} MATCHES "^([Dd][Ee][Bb][Uu][Gg])$")
-		SET(CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}.debug)
-	ENDIF()
+    IF(${CMAKE_INSTALL_CONFIG_NAME} MATCHES "^([Dd][Ee][Bb][Uu][Gg])$")
+        SET(CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}.debug)
+    ENDIF()
 ENDIF()
 
 INSTALL( CODE "
-		MESSAGE( STATUS \"Making a \${CMAKE_INSTALL_CONFIG_NAME} install area\" )
-		IF ( \"\${CPACK_RUNNING_CPACK}\" STREQUAL \"\" )
-			IF(\${CMAKE_INSTALL_CONFIG_NAME} MATCHES \"^([Dd][Ee][Bb][Uu][Gg])$\")
-				SET(CMAKE_INSTALL_PREFIX \${CMAKE_INSTALL_PREFIX}.debug)
-			ENDIF()
-		ENDIF()
-		MESSAGE( STATUS \"Installing to \${CMAKE_INSTALL_PREFIX}\" )
+        MESSAGE( STATUS \"Making a \${CMAKE_INSTALL_CONFIG_NAME} install area\" )
+        IF ( \"\${CPACK_RUNNING_CPACK}\" STREQUAL \"\" )
+            IF(\${CMAKE_INSTALL_CONFIG_NAME} MATCHES \"^([Dd][Ee][Bb][Uu][Gg])$\")
+                SET(CMAKE_INSTALL_PREFIX \${CMAKE_INSTALL_PREFIX}.debug)
+            ENDIF()
+        ENDIF()
+        MESSAGE( STATUS \"Installing to \${CMAKE_INSTALL_PREFIX}\" )
     ")
 
 SET(CMAKE_AUTOMOC OFF)
 SET(CMAKE_AUTORCC OFF)
 SET(CMAKE_AUTOUIC OFF)
-
-find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
-SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/Modules ${CMAKE_MODULE_PATH})
-
-find_package(Deploy REQUIRED)
 
 include( include.cmake )
 QT5_WRAP_UI(qtproject_UIS_H ${qtproject_UIS})
@@ -72,20 +75,22 @@ source_group("CMake Files" FILES ${_CMAKE_FILES} )
 FILE(GLOB _CMAKE_MODULE_FILES "${CMAKE_SOURCE_DIR}/Modules/*")
 source_group("CMake Files\\Modues" FILES ${_CMAKE_MODULE_FILES} )
 
-add_executable(BSACalc WIN32 ${project_SRCS} ${project_H}  
-	${qtproject_SRCS} 
-	${qtproject_QRC} 
-	${qtproject_QRC_SRCS} 
-	${qtproject_UIS_H} 
-	${qtproject_MOC_SRCS} 
-	${qtproject_H} 
-	${qtproject_UIS}
-	${qtproject_QRC_SOURCES}
-	${_CMAKE_FILES}
-	${_CMAKE_MODULE_FILES}
+add_executable(BSACalc WIN32 
+    ${project_SRCS} 
+    ${project_H}  
+    ${qtproject_SRCS} 
+    ${qtproject_QRC} 
+    ${qtproject_QRC_SRCS} 
+    ${qtproject_UIS_H} 
+    ${qtproject_MOC_SRCS} 
+    ${qtproject_H} 
+    ${qtproject_UIS}
+    ${qtproject_QRC_SOURCES}
+    ${_CMAKE_FILES}
+    ${_CMAKE_MODULE_FILES}
 )
 target_link_libraries( BSACalc 
-	Qt5::Widgets
+    Qt5::Widgets
     Qt5::Core
 )
 SET(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION .)
@@ -105,6 +110,7 @@ SET(CPACK_PACKAGE_VERSION_MAJOR "1")
 SET(CPACK_PACKAGE_VERSION_MINOR "0")
 SET(CPACK_PACKAGE_VERSION_PATCH "0")
 SET(CPACK_GENERATOR ZIP )
+set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY 0)
 include(CPack)
 STRING(APPEND _CPACK_OTHER_VARIABLES_ "\nset(CPACK_RUNNING 1)" )
 #get_cmake_property(_variableNames VARIABLES)
