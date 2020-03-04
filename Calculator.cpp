@@ -316,17 +316,6 @@ void CCalculator::addLastValue( const QString& newValue )
     fModel->setData( mi, newValue );
 }
 
-std::pair< int64_t, std::list< int64_t > > CCalculator::getSumOfFactors( int64_t curr, bool properFactors ) const
-{
-    auto factors = computeFactors( curr );
-    if ( properFactors && !factors.empty() )
-        factors.pop_back();
-    int64_t sum = 0;
-    for ( auto ii : factors )
-        sum += ii;
-    return std::make_pair( sum, factors );
-}
-
 void CCalculator::btnEnterClicked()
 {
     if ( fModel->rowCount() == 0 )
@@ -426,99 +415,12 @@ void CCalculator::btnNarcissisticClicked()
     }
 }
 
-std::list< int64_t > CCalculator::computeFactors( int64_t num ) const
-{
-    std::list< int64_t > retVal;
-    std::list< int64_t > retVal2;
-    retVal.push_back( 1 );
-    retVal2.push_back( num );
-
-    // only need to go to half way point
-    auto lastNum = ( num / 2 ) + ( ( ( num % 2 ) == 0 ) ? 0 : 1 );
-    for( int64_t ii = 2; ii < lastNum; ++ii )
-    {
-        if ( ( num % ii ) == 0 )
-        {
-            retVal.push_back( ii );
-            auto other = num / ii;
-            lastNum = std::min( lastNum, other );
-            retVal2.push_front( other );
-        }
-    }
-
-    if ( *retVal.rbegin() == *retVal2.begin() )
-        retVal2.pop_front();
-    retVal.insert( retVal.end(), retVal2.begin(), retVal2.end() );
-    retVal.sort();
-    return retVal;
-}
-
-
-std::list< int64_t > CCalculator::computePrimeFactors( int64_t num ) const
-{
-    std::list< int64_t > retVal;
-
-    while( ( num % 2 ) == 0 )
-    {
-        retVal.push_back( 2 );
-        num = num / 2 ;
-    }
-
-    int64_t lastNum = std::sqrt( num );
-
-    for( int64_t ii = 3; ii < lastNum; ii = ii + 2 )
-    {
-        while( ( num % ii )  == 0 )
-        {
-            retVal.push_back( ii );
-            num = num / ii;
-        }
-    }
-    if ( num > 2 )
-        retVal.push_back( num );
-    return retVal;
-}
-
-bool CCalculator::isSemiPerfect( const std::vector< int64_t >& factors, size_t n, int64_t num ) const
-{
-    if ( num == 0 )
-        return true;
-    if ( n == 0 && num != 0 )
-        return false;
-
-    if ( factors[ n - 1 ] > num )
-        return isSemiPerfect( factors, n - 1, num );
-    return isSemiPerfect( factors, n - 1, num ) 
-        || isSemiPerfect( factors, n - 1, num - factors[ n - 1 ] );
-}
-
-std::pair< bool, std::list< int64_t > > CCalculator::isPerfect( int64_t num ) const
-{
-    auto sum = getSumOfFactors( num, true );
-    return std::make_pair( sum.first == num, sum.second );
-}
-
-std::pair< bool, std::list< int64_t > > CCalculator::isSemiPerfect( int64_t num ) const
-{
-    auto sum = getSumOfFactors( num, true );
-    auto factors = std::vector< int64_t >( { sum.second.begin(), sum.second.end() } );
-    auto isSemiPerfect = this->isSemiPerfect( factors, factors.size(), num );
-    return std::make_pair( isSemiPerfect, sum.second );
-}
-
-std::pair< bool, std::list< int64_t > > CCalculator::isAbundant( int64_t num ) const
-{
-    auto sum = getSumOfFactors( num, true );
-    return std::make_pair( sum.first > num, sum.second );
-}
-
-
 void CCalculator::btnFactorsClicked( bool incNum )
 {
     if ( numValues() < 1 )
         return;
     auto curr = getLastValue< int64_t >( false );
-    auto factors = computeFactors( curr );
+    auto factors = NUtils::computeFactors( curr );
 
     reportPrime( factors, curr, incNum, 2 );
 }
@@ -528,7 +430,7 @@ void CCalculator::btnPrimeFactorsClicked()
     if ( numValues() < 1 )
         return;
     auto curr = getLastValue< int64_t >( false );
-    auto factors = computePrimeFactors( curr );
+    auto factors = NUtils::computePrimeFactors( curr );
 
     reportPrime( factors, curr, true, 1 );
 }
@@ -539,7 +441,7 @@ void CCalculator::btnPerfectClicked()
         return;
     auto curr = getLastValue< int64_t >( false );
 
-    addLastValue( isPerfect( curr ).first );
+    addLastValue( NUtils::isPerfect( curr ).first );
 }
 
 void CCalculator::btnSemiPerfectClicked()
@@ -547,7 +449,7 @@ void CCalculator::btnSemiPerfectClicked()
     if ( numValues() < 1 )
         return;
     auto curr = getLastValue< int64_t >( false );
-    addLastValue( isSemiPerfect( curr ).first );
+    addLastValue( NUtils::isSemiPerfect( curr ).first );
 }
 
 void CCalculator::btnAbundantClicked()
@@ -555,7 +457,7 @@ void CCalculator::btnAbundantClicked()
     if ( numValues() < 1 )
         return;
     auto curr = getLastValue< int64_t >( false );
-    addLastValue( isAbundant( curr ).first );
+    addLastValue( NUtils::isAbundant( curr ).first );
 }
 
 void CCalculator::btnWeirdClicked()
@@ -563,7 +465,7 @@ void CCalculator::btnWeirdClicked()
     if ( numValues() < 1 )
         return;
     auto curr = getLastValue< int64_t >( false );
-    auto isAbundant = this->isAbundant( curr );
+    auto isAbundant = NUtils::isAbundant( curr );
     if ( !isAbundant.first )
     {
         addLastValue( false );
@@ -571,7 +473,7 @@ void CCalculator::btnWeirdClicked()
     }
 
     std::vector< int64_t > factors( { isAbundant.second.begin(), isAbundant.second.end() } );
-    addLastValue( !isSemiPerfect( factors, factors.size(), curr ) );
+    addLastValue( !NUtils::isSemiPerfect( factors, factors.size(), curr ) );
 }
 
 void CCalculator::btnSublimeClicked()
@@ -579,9 +481,9 @@ void CCalculator::btnSublimeClicked()
     if ( numValues() < 1 )
         return;
     auto curr = getLastValue< int64_t >( false );
-    auto sumOfFactors = getSumOfFactors( curr, false );
+    auto sumOfFactors = NUtils::getSumOfFactors( curr, false );
 
-    auto isNumFactorsPerfect = isPerfect( sumOfFactors.second.size() ).first;
-    auto isSumPerfect = isPerfect( sumOfFactors.first ).first;
+    auto isNumFactorsPerfect = NUtils::isPerfect( sumOfFactors.second.size() ).first;
+    auto isSumPerfect = NUtils::isPerfect( sumOfFactors.first ).first;
     addLastValue( isNumFactorsPerfect && isSumPerfect );
 }

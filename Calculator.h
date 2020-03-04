@@ -76,14 +76,6 @@ private:
     void addLastValue( bool value );
     void addLastValue( int64_t value );
     void addLastValue( const QString & newValue );
-    std::pair< int64_t, std::list< int64_t > > getSumOfFactors( int64_t curr, bool properFactors ) const;
-    std::pair< bool, std::list< int64_t > > isAbundant( int64_t num ) const;
-    std::pair< bool, std::list< int64_t > > isSemiPerfect( int64_t num ) const;
-    std::pair< bool, std::list< int64_t > > isPerfect( int64_t num ) const;
-
-    std::list< int64_t > computeFactors( int64_t num ) const;
-    std::list< int64_t > computePrimeFactors( int64_t num ) const;
-    bool isSemiPerfect( const std::vector< int64_t >& numbers, size_t n, int64_t num ) const;
 
     std::unique_ptr< Ui::CCalculator > fImpl;
     QStringListModel * fModel;
