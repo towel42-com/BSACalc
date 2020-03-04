@@ -1,0 +1,3 @@
+[submodule "NarcissisticNumbers"]
+	path = NarcissisticNumbers
+	url = https://github.com/scottaronbloom/NarcissisticNumbers
