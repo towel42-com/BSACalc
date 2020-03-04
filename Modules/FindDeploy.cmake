@@ -30,7 +30,7 @@ get_filename_component(_qt_bin_dir "${_qmake_executable}" DIRECTORY)
 
 if( WIN32 )
     find_program(DEPLOYQT_EXECUTABLE windeployqt HINTS "${_qt_bin_dir}")
-    if(NOT WINDEPLOYQT_EXECUTABLE)
+    if(NOT DEPLOYQT_EXECUTABLE)
         message(FATAL_ERROR "windeployqt not found")
     endif()
 
