@@ -1,6 +1,6 @@
 set(qtproject_SRCS
-	main.cpp    
-    utils.cpp
+    main.cpp    
+    NarcissisticNumbers/utils.cpp
     Calculator.cpp
 )
 
@@ -9,7 +9,7 @@ set(qtproject_H
 )
 
 set(project_H
-    utils.h
+    NarcissisticNumbers/utils.h
 )
 
 set(qtproject_UIS

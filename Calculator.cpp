@@ -21,7 +21,7 @@
 // SOFTWARE.
 
 #include "Calculator.h"
-#include "utils.h"
+#include "NarcissisticNumbers/utils.h"
 
 #include "ui_Calculator.h"
 
