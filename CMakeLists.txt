@@ -5,7 +5,7 @@
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sub0license, and/or sell
+# to use, copy, modify, merge, publish, distribute, sub-license, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
 #
@@ -24,6 +24,7 @@ cmake_minimum_required(VERSION 3.1)
 if(CMAKE_VERSION VERSION_LESS "3.7.0")
     set(CMAKE_INCLUDE_CURRENT_DIR ON)
 endif()
+
 project(BSACalc) 
 
 SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/Modules ${CMAKE_MODULE_PATH})
@@ -38,18 +39,14 @@ find_package(Deploy REQUIRED)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 SET(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/Install)
-IF ( "${CPACK_RUNNING}" STREQUAL "" )
-    IF(${CMAKE_INSTALL_CONFIG_NAME} MATCHES "^([Dd][Ee][Bb][Uu][Gg])$")
-        SET(CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}.debug)
-    ENDIF()
+IF(${CMAKE_INSTALL_CONFIG_NAME} MATCHES "^([Dd][Ee][Bb][Uu][Gg])$")
+    SET(CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}.debug)
 ENDIF()
 
 INSTALL( CODE "
         MESSAGE( STATUS \"Making a \${CMAKE_INSTALL_CONFIG_NAME} install area\" )
-        IF ( \"\${CPACK_RUNNING_CPACK}\" STREQUAL \"\" )
-            IF(\${CMAKE_INSTALL_CONFIG_NAME} MATCHES \"^([Dd][Ee][Bb][Uu][Gg])$\")
-                SET(CMAKE_INSTALL_PREFIX \${CMAKE_INSTALL_PREFIX}.debug)
-            ENDIF()
+        IF(\${CMAKE_INSTALL_CONFIG_NAME} MATCHES \"^([Dd][Ee][Bb][Uu][Gg])$\")
+            SET(CMAKE_INSTALL_PREFIX \${CMAKE_INSTALL_PREFIX}.debug)
         ENDIF()
         MESSAGE( STATUS \"Installing to \${CMAKE_INSTALL_PREFIX}\" )
     ")
@@ -75,7 +72,7 @@ source_group("CMake Files" FILES ${_CMAKE_FILES} )
 FILE(GLOB _CMAKE_MODULE_FILES "${CMAKE_SOURCE_DIR}/Modules/*")
 source_group("CMake Files\\Modues" FILES ${_CMAKE_MODULE_FILES} )
 
-add_executable(BSACalc WIN32 
+add_executable(BSACalc WIN32
     ${project_SRCS} 
     ${project_H}  
     ${qtproject_SRCS} 
@@ -102,15 +99,11 @@ INSTALL(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION . )
 INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/Debug/${PROJECT_NAME}.pdb DESTINATION . CONFIGURATIONS Debug )
 
 
-#SET(CPACK_PROPERTIES_FILE ${CMAKE_SOURCE_DIR}/CPackProperties.cmake)
-#SET(CPACK_PROJECT_CONFIG_FILE ${PROJECT_BINARY_DIR}/CPackOptions.cmake)
-
 SET(CPACK_PACKAGE_VENDOR "BSA Troop 162")
 SET(CPACK_PACKAGE_VERSION_MAJOR "1")
 SET(CPACK_PACKAGE_VERSION_MINOR "0")
 SET(CPACK_PACKAGE_VERSION_PATCH "0")
 SET(CPACK_GENERATOR ZIP )
-set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY 0)
 include(CPack)
 STRING(APPEND _CPACK_OTHER_VARIABLES_ "\nset(CPACK_RUNNING 1)" )
 #get_cmake_property(_variableNames VARIABLES)

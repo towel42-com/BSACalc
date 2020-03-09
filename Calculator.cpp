@@ -95,7 +95,7 @@ CCalculator::CCalculator( QWidget* parent )
     (void)connect( fImpl->btn_Abundant, &QToolButton::clicked, this, [ this ]() { btnAbundantClicked(); } );
     (void)connect( fImpl->btn_Weird, &QToolButton::clicked, this, [ this ]() { btnWeirdClicked(); } );
     (void)connect( fImpl->btn_Sublime, &QToolButton::clicked, this, [ this ]() { btnSublimeClicked(); } );
-
+    (void)connect( fImpl->btn_Factorial, &QPushButton::clicked, this, [ this ]() { btnFactorialClicked(); } );
 
     fImpl->values->installEventFilter( this );
     setFocus( Qt::MouseFocusReason );
@@ -144,6 +144,7 @@ void CCalculator::initMaps()
         ,{ fImpl->btn_Abundant, 1 }
         ,{ fImpl->btn_Weird, 1 }
         ,{ fImpl->btn_Sublime, 1 }
+        ,{ fImpl->btn_Factorial, 1 }
     };
 
     fKeyMap =
@@ -486,4 +487,18 @@ void CCalculator::btnSublimeClicked()
     auto isNumFactorsPerfect = NUtils::isPerfect( sumOfFactors.second.size() ).first;
     auto isSumPerfect = NUtils::isPerfect( sumOfFactors.first ).first;
     addLastValue( isNumFactorsPerfect && isSumPerfect );
+}
+
+void CCalculator::btnFactorialClicked()
+{
+    if ( numValues() < 1 )
+        return;
+    auto curr = getLastValue< int64_t >( false );
+    if ( curr <= 0 )
+        return;
+
+    int64_t retVal = 1;
+    for( int64_t ii = curr; ii > 0; ii = ii - 1 )
+        retVal = retVal * ii;
+    addLastValue( retVal );
 }
