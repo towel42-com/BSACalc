@@ -1,7 +1,11 @@
 <RCC>
     <qresource prefix="/">
-	<file>resources/calc.png</file>
-	<file>resources/del.png</file>
-	<file>resources/equal.png</file>
+        <file>resources/calc.png</file>
+        <file>resources/del.png</file>
+        <file>resources/equal.png</file>
+        <file>resources/plusminus.png</file>
+        <file>resources/invert.png</file>
+        <file>resources/sqrt.png</file>
+        <file>resources/square.png</file>
     </qresource>
 </RCC>

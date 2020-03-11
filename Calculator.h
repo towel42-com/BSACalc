@@ -33,6 +33,28 @@ namespace Ui {class CCalculator;};
 class QStringListModel;
 class QAbstractButton;
 
+enum class ETrigOperator
+{
+    eSin,
+    eArcSin,
+    eSinH,
+    eCos,
+    eArcCos,
+    eCosH,
+    eTan,
+    eArcTan,
+    eTanH,
+    eSec,
+    eArcSec,
+    eSecH,
+    eCsc,
+    eArcCsc,
+    eCscH,
+    eCot,
+    eArcCot,
+    eCotH
+};
+
 class CCalculator : public QDialog
 {
     Q_OBJECT
@@ -55,6 +77,13 @@ public slots:
     void btnBSClicked();
 
     void btnAverageClicked();
+
+    void btnMedianClicked();
+
+    void btnStdDeviationClicked();
+    void btnSampleStdDeviationClicked();
+    void btnPctStdDeviationClicked();
+
     void btnNarcissisticClicked();
     void btnFactorsClicked( bool incNum );
 
@@ -68,15 +97,33 @@ public slots:
     void btnSublimeClicked();
     void btnAbundantClicked();
     void btnFactorialClicked();
+    void btnFactorClicked();
+
     void slotDataChanged();
+    void slotNegate();
+    void slotPercent();
+    void slotInvert();
+    void slotSquare();
+    void slotSquareRoot();
 private:
+    void trigOperatorClicked( ETrigOperator op );
+
+    double getMean();
+    std::pair< double, double > calcStdDeviation( bool sample );
+
     template< typename T >
     T getLastValue( bool popLast );
+    template< typename T >
+    std::vector<T> getAllValues( bool sorted );
     void addValue( char value );
     void addLastValue( double value );
     void addLastValue( bool value );
     void addLastValue( int64_t value );
     void addLastValue( const QString & newValue );
+
+    double pi() const;
+    double degToRad( double degrees ) const;
+    double radToDeg( double radians ) const;
 
     std::unique_ptr< Ui::CCalculator > fImpl;
     QStringListModel * fModel;
