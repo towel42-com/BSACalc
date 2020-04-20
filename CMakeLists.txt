@@ -51,26 +51,11 @@ INSTALL( CODE "
         MESSAGE( STATUS \"Installing to \${CMAKE_INSTALL_PREFIX}\" )
     ")
 
-SET(CMAKE_AUTOMOC OFF)
-SET(CMAKE_AUTORCC OFF)
-SET(CMAKE_AUTOUIC OFF)
+add_subdirectory(SABUtils)
+
 
 include( include.cmake )
-QT5_WRAP_UI(qtproject_UIS_H ${qtproject_UIS})
-QT5_WRAP_CPP(qtproject_MOC_SRCS ${qtproject_H})
-QT5_ADD_RESOURCES( qtproject_QRC_SRCS ${qtproject_QRC} )
-
-include_directories(${CMAKE_SOURCE_DIR})
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-
-source_group("Generated Files" FILES ${qtproject_UIS_H} ${qtproject_MOC_SRCS} ${qtproject_QRC_SRCS} )
-source_group("Resource Files" FILES ${qtproject_QRC} ${qtproject_QRC_SOURCES} )
-source_group("Designer Files" FILES ${qtproject_UIS} )
-source_group("Header Files" FILES ${qtproject_H} ${project_H} )
-SET( _CMAKE_FILES "CMakeLists.txt;include.cmake" )
-source_group("CMake Files" FILES ${_CMAKE_FILES} )
-FILE(GLOB _CMAKE_MODULE_FILES "${CMAKE_SOURCE_DIR}/Modules/*")
-source_group("CMake Files\\Modues" FILES ${_CMAKE_MODULE_FILES} )
+include(SABUtils/Project.cmake)
 
 add_executable(BSACalc WIN32
     ${project_SRCS} 
@@ -89,6 +74,7 @@ add_executable(BSACalc WIN32
 target_link_libraries( BSACalc 
     Qt5::Widgets
     Qt5::Core
+    SABUtils
 )
 SET(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION .)
 
